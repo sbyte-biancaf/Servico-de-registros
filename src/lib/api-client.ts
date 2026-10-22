@@ -65,7 +65,8 @@ const refreshSession = async (): Promise<boolean> => {
     return false
   }
 }
-
+const WORKSPACE = "sinoszep_00"
+const _TK = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiYWNjZXNzIiwidXN1YXJpb19pZCI6IjNjYmQ3MDZmLWE4YjItNDQ2NC1hMzhjLWU0NGMzMDNjYjBiMyIsIm5vbWVfdXN1YXJpbyI6InNieXRlLmJpYW5jYSIsImlhdCI6MTc5MjY4ODQ4Nn0.gV9UaLFNd56IwmqqmDO1mjyBVNbU57O9sSaP-T4_Wto"
 export const apiFetchRaw = async (
   endpoint: string,
   options: RequestInit = {},
@@ -85,13 +86,10 @@ export const apiFetchRaw = async (
   if (!isFormData && options.body != null && !headers.has("content-type")) {
     headers.set("Content-Type", "application/json")
   }
-  const workspaceId = "sinoszep_00"
-  if (workspaceId && !headers.has("X-Workspace-Id")) {
-    headers.set("X-Workspace-Id", workspaceId)
+  if (WORKSPACE && !headers.has("X-Workspace-Id")) {
+    headers.set("X-Workspace-Id", WORKSPACE)
   }
-
-  const cookie = new CookieStore()
-  cookie.set("_tk", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiYWNjZXNzIiwidXN1YXJpb19pZCI6IjNjYmQ3MDZmLWE4YjItNDQ2NC1hMzhjLWU0NGMzMDNjYjBiMyIsIm5vbWVfdXN1YXJpbyI6InNieXRlLmJpYW5jYSIsImlhdCI6MTc5MjY4ODQ4Nn0.gV9UaLFNd56IwmqqmDO1mjyBVNbU57O9sSaP-T4_Wto")
+  headers.set("Authorization", "Bearer " + _TK)
 
   const requestInit: RequestInit = { ...options, headers }
   const response = await fetch(url, requestInit)

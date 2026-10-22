@@ -77,18 +77,12 @@ export function App() {
   const buscarRegistros = useCallback(async () => {
     setLoading(true)
     try {
-      const payload = getPayload()
-      const options: RequestInit= {
-        method: "POST",
-        // headers: {
-        //   // "Content-Type": "application/json",
-        //   // "x-workspace-id": "sinoszep_00",
-        //   // "Cookie": "_tk = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiYWNjZXNzIiwidXN1YXJpb19pZCI6IjNjYmQ3MDZmLWE4YjItNDQ2NC1hMzhjLWU0NGMzMDNjYjBiMyIsIm5vbWVfdXN1YXJpbyI6InNieXRlLmJpYW5jYSIsImlhdCI6MTc5MjY4ODQ4Nn0.gV9UaLFNd56IwmqqmDO1mjyBVNbU57O9sSaP-T4_Wto"
-        // },
-        body: JSON.stringify(payload),
-      }
+      // const payload = getPayload()
+      // // const options: RequestInit= {
+      // //   body: JSON.stringify(payload),
+      // // }
 
-      const response = await apiFetch(`/api/relatorios/registro`, options)
+      const response = await apiFetch(`/api/relatorios/registro`)
       const resultado = response.data || []
       setDados(Array.isArray(resultado) ? resultado : [])
     } catch (err) {
