@@ -16,6 +16,9 @@ import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { getCookie, setCookie } from "@/lib/utils"
 
+// Início do uso de Excel
+import ExcelJS from "exceljs";
+
 type FiltroRange = {
   inicio: string
   fim: string
