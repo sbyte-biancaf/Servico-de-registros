@@ -74,10 +74,10 @@ export function App() {
       const params = new URLSearchParams()
 
       if (dataInicio) {
-        params.append("dataInicio", format(dataInicio, "yyyy-MM-dd"))
+        params.append("data_inicio", format(dataInicio, "yyyy-MM-dd"))
       }
       if (dataFim) {
-        params.append("dataFim", format(dataFim, "yyyy-MM-dd"))
+        params.append("data_fim", format(dataFim, "yyyy-MM-dd"))
       }
 
       const chavesFiltros = ["cliente", "projeto", "colaborador", "atividade", "tipoAtividade"] as const
