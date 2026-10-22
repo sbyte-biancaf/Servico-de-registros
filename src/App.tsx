@@ -18,6 +18,7 @@ import { getCookie, setCookie } from "@/lib/utils"
 
 // Início do uso de Excel
 import ExcelJS from "exceljs";
+import path from "node:path";
 
 type FiltroRange = {
   inicio: string
@@ -42,6 +43,21 @@ const filtrosVazios = (): Filtros => ({
   tipoAtividade: emptyRange(),
 })
 
+// Auxiliar para copiar estilo de uma célula para outra (preserva bordas, fontes, alinhamentos e formatos)
+function copiarEstiloCelula(celulaOrigem: ExcelJS.Cell, celulaDestino: ExcelJS.Cell) {
+  if (celulaOrigem.style) {
+    celulaDestino.style = JSON.parse(JSON.stringify(celulaOrigem.style));
+  }
+}
+
+async function gerarRelatorioHardcoded() {
+  const workbook = new ExcelJS.Workbook();
+
+  await workbook.xlsx.readFile('SINOSBYTE-TEMPLATE-Vazio.xlsx');
+
+  const wsConsolidado = workbook.getWorksheet("Consolidado");
+  
+}
 
 export function App() {
 
