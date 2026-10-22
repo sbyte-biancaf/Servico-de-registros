@@ -43,10 +43,8 @@ const filtrosVazios = (): Filtros => ({
 export function App() {
 
 
-  const [date, setDate] = useState<DateRange | undefined>({
-      from: addDays(new Date(), -30),
-      to: new Date(),
-    })
+  const [dataInicio, setDataInicio] = useState<Date | undefined>(addDays(new Date(), -30))
+  const [dataFim, setDataFim] = useState<Date | undefined>(new Date())
 
   const [filtros, setFiltros] = useState<Filtros>(filtrosVazios())
   const [dados, setDados] = useState<unknown[]>([])
@@ -65,8 +63,8 @@ export function App() {
   const getPayload = useCallback(() => {
     return {
       data: {
-        inicio: date?.from ? format(date.from, "yyyy-MM-dd") : "",
-        fim: date?.to ? format(date.to, "yyyy-MM-dd") : "",
+        inicio: dataInicio,
+        fim: dataFim,
       },
       cliente: formatarZZZ(filtros.cliente),
       projeto: formatarZZZ(filtros.projeto),
@@ -74,7 +72,7 @@ export function App() {
       atividade: formatarZZZ(filtros.atividade),
       tipoAtividade: formatarZZZ(filtros.tipoAtividade),
     }
-  }, [date, filtros])
+  }, [dataFim, dataInicio, filtros])
 
   const buscarRegistros = useCallback(async () => {
     setLoading(true)
@@ -122,44 +120,55 @@ export function App() {
     <main className="min-h-0 w-full pr-4 my-8">
       <h1 className="text-center text-4xl font-bold">Serviço de Registros</h1>
       <Card className="m-14 p-8 grid grid-cols-3">
-        <div className="text-center">
-          <Label className="mb-1.5 text-center" htmlFor="date-picker-range">
-            Período:{" "}
-          </Label>
-                <div id="date-picker-range">
-                  <Popover modal={false}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="justify-start px-2.5 font-normal w-140"
-                      >
-                        <CalendarIcon />
-                        {date?.from && date?.to && (
-                          <>
-                            {format(date.from, "dd/LL/yy")} - {""}
-                            {format(date.to, "dd/LL/yy")}
-                          </>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="w-auto min-w-140 p-0"
-                      align="start"
-                    >
-                      <Calendar
-                        fixedWeeks
-                        className="w-auto"
-                        mode="range"
-                        selected={date}
-                        onSelect={setDate}
-                        numberOfMonths={2}
-                        defaultMonth={date?.from}
-                        locale={ptBR}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
+        
+        <div className="flex flex-col gap-1.5">
+          <Label>Data Início e Fim</Label>
+          <div className="flex items-center gap-2">
+            
+            <Popover modal={false}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="justify-start px-2.5 font-normal w-67"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                  <span className="truncate">{dataInicio ? format(dataInicio, "dd/MM/yy") : "Início"}</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dataInicio}
+                  onSelect={setDataInicio}
+                  locale={ptBR}
+                />
+              </PopoverContent>
+            </Popover>
+
+            <Minus className="h-4 w-4 text-muted-foreground shrink-0" />
+
+            <Popover modal={false}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="justify-start px-2.5 font-normal w-67"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                  <span className="truncate">{dataFim ? format(dataFim, "dd/MM/yy") : "Fim"}</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dataFim}
+                  onSelect={setDataFim}
+                  locale={ptBR}
+                />
+              </PopoverContent>
+            </Popover>
+
           </div>
+        </div>
 
           {(
             [
