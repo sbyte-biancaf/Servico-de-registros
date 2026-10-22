@@ -63,20 +63,6 @@ export function App() {
     }
   }
 
-  const getPayload = useCallback(() => {
-    return {
-      data: {
-        inicio: dataInicio,
-        fim: dataFim,
-      },
-      cliente: formatarZZZ(filtros.cliente),
-      projeto: formatarZZZ(filtros.projeto),
-      colaborador: formatarZZZ(filtros.colaborador),
-      atividade: formatarZZZ(filtros.atividade),
-      tipoAtividade: formatarZZZ(filtros.tipoAtividade),
-    }
-  }, [dataFim, dataInicio, filtros])
-
   const buscarRegistros = useCallback(async () => {
     setLoading(true)
     try {
@@ -85,7 +71,25 @@ export function App() {
       // //   body: JSON.stringify(payload),
       // // }
 
-      const response = await apiFetch(`/api/relatorios/registro`)
+      const params = new URLSearchParams()
+
+      if (dataInicio) {
+        params.append("dataInicio", format(dataInicio, "yyyy-MM-dd"))
+      }
+      if (dataFim) {
+        params.append("dataFim", format(dataFim, "yyyy-MM-dd"))
+      }
+
+      const chavesFiltros = ["cliente", "projeto", "colaborador", "atividade", "tipoAtividade"] as const
+      chavesFiltros.forEach((key) => {
+        const zzz = formatarZZZ(filtros[key])
+        if (zzz) {
+          params.append(`${key}Inicio`, zzz.inicio)
+          params.append(`${key}Fim`, zzz.fim)
+        }
+      })
+
+      const response = await apiFetch(`/api/relatorios/registro?${params.toString()}`)
       const resultado = response.data || []
       setDados(Array.isArray(resultado) ? resultado : [])
     } catch (err) {
@@ -95,7 +99,7 @@ export function App() {
       toast.success("Registros adquiridos! Download começando")
       setLoading(false)
     }
-  }, [getPayload])
+  }, [dataInicio, dataFim, filtros])
 
   const handleInputChange = (field: keyof Filtros, subfield: "inicio" | "fim", value: string) => {
     setFiltros((prev) => ({
