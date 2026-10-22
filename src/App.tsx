@@ -14,7 +14,7 @@ import { ptBR } from "date-fns/locale"
 import { apiFetch, apiFetchRaw } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
-
+import { getCookie, setCookie } from "@/lib/utils"
 
 type FiltroRange = {
   inicio: string
@@ -76,20 +76,21 @@ export function App() {
     }
   }, [date, filtros])
 
-
   const buscarRegistros = useCallback(async () => {
     setLoading(true)
     try {
       const payload = getPayload()
-      const response = await apiFetch(`/api/relatorios/registro`, {
+      const options: RequestInit= {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-workspace-id": "sinosbyte_rs",
-          'Cookie': "_tk=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiYWNjZXNzIiwidXN1YXJpb19pZCI6IjUxNWZlZDc4LWEyYzItNGE4OC05ZmJjLTY3YjM4MTU4NDIyOSIsIm5vbWVfdXN1YXJpbyI6InNieXRlLmJpYW5jYSIsImlhdCI6MTc5MDg2MjczOX0.98ZSLYTtyMDdXggheWdATKQrOuuqCmtma8cuzCqZ-zE"
-        },
+        // headers: {
+        //   // "Content-Type": "application/json",
+        //   // "x-workspace-id": "sinoszep_00",
+        //   // "Cookie": "_tk = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiYWNjZXNzIiwidXN1YXJpb19pZCI6IjNjYmQ3MDZmLWE4YjItNDQ2NC1hMzhjLWU0NGMzMDNjYjBiMyIsIm5vbWVfdXN1YXJpbyI6InNieXRlLmJpYW5jYSIsImlhdCI6MTc5MjY4ODQ4Nn0.gV9UaLFNd56IwmqqmDO1mjyBVNbU57O9sSaP-T4_Wto"
+        // },
         body: JSON.stringify(payload),
-      })
+      }
+
+      const response = await apiFetch(`/api/relatorios/registro`, options)
       const resultado = response.data || []
       setDados(Array.isArray(resultado) ? resultado : [])
     } catch (err) {
