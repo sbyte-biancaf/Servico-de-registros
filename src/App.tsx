@@ -15,10 +15,22 @@ import { apiFetch, apiFetchRaw } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { getCookie, setCookie } from "@/lib/utils"
+import {
+  SelectTrigger,
+  SelectItem,
+  SelectContent,
+  Select,
+  SelectValue,
+  SelectGroup,
+  SelectLabel,
+} from "@/components/ui/select"
 
 // Início do uso de Excel
 import ExcelJS from "exceljs";
 import path from "node:path";
+
+import { gerarRelatorio, type RegistroApi } from "@/lib/relatorio-excel"
+
 
 type FiltroRange = {
   inicio: string
@@ -43,31 +55,40 @@ const filtrosVazios = (): Filtros => ({
   tipoAtividade: emptyRange(),
 })
 
-// Auxiliar para copiar estilo de uma célula para outra (preserva bordas, fontes, alinhamentos e formatos)
-function copiarEstiloCelula(celulaOrigem: ExcelJS.Cell, celulaDestino: ExcelJS.Cell) {
-  if (celulaOrigem.style) {
-    celulaDestino.style = JSON.parse(JSON.stringify(celulaOrigem.style));
-  }
-}
-
-async function gerarRelatorioHardcoded() {
-  const workbook = new ExcelJS.Workbook();
-
-  await workbook.xlsx.readFile('SINOSBYTE-TEMPLATE-Vazio.xlsx');
-
-  const wsConsolidado = workbook.getWorksheet("Consolidado");
-  
-}
-
 export function App() {
-
-
-  const [dataInicio, setDataInicio] = useState<Date | undefined>(addDays(new Date(), -30))
-  const [dataFim, setDataFim] = useState<Date | undefined>(new Date())
+  const anoAtual = new Date().getFullYear().toString()
+  const mesAtual = (new Date().getMonth() + 1).toString().padStart(2, "0")
+  
+  const [filtroAno, setFiltroAno] = useState<string>(anoAtual)
+  const [filtroMes, setFiltroMes] = useState<string>(mesAtual)
 
   const [filtros, setFiltros] = useState<Filtros>(filtrosVazios())
   const [dados, setDados] = useState<unknown[]>([])
   const [loading, setLoading] = useState(false)
+
+
+  const anos = [
+    String(parseInt(anoAtual) + 2),
+    String(parseInt(anoAtual) + 1),
+    anoAtual,
+    String(parseInt(anoAtual) - 1),
+    String(parseInt(anoAtual) - 2),
+  ]
+
+  const meses = [
+    { value: "01", label: "Janeiro" },
+    { value: "02", label: "Fevereiro" },
+    { value: "03", label: "Março" },
+    { value: "04", label: "Abril" },
+    { value: "05", label: "Maio" },
+    { value: "06", label: "Junho" },
+    { value: "07", label: "Julho" },
+    { value: "08", label: "Agosto" },
+    { value: "09", label: "Setembro" },
+    { value: "10", label: "Outubro" },
+    { value: "11", label: "Novembro" },
+    { value: "12", label: "Dezembro" },
+  ]
 
   const formatarZZZ = (filtro: FiltroRange) => {
     if (!filtro.inicio?.trim() || !filtro.fim?.trim()) {
@@ -80,21 +101,24 @@ export function App() {
   }
 
   const buscarRegistros = useCallback(async () => {
+    if (!filtroAno || !filtroMes) {
+      toast.warning("Selecione o ano e o mês.")
+      return
+    }
+
     setLoading(true)
     try {
-      // const payload = getPayload()
-      // // const options: RequestInit= {
-      // //   body: JSON.stringify(payload),
-      // // }
+      const anoNum = parseInt(filtroAno, 10)
+      const mesNum = parseInt(filtroMes, 10)
+
+      const primeiroDia = `${filtroAno}-${filtroMes}-01`
+      const ultimoDiaDate = new Date(anoNum, mesNum, 0)
+      const ultimoDia = `${filtroAno}-${filtroMes}-${String(ultimoDiaDate.getDate()).padStart(2, "0")}`
 
       const params = new URLSearchParams()
 
-      if (dataInicio) {
-        params.append("data_inicio", format(dataInicio, "yyyy-MM-dd"))
-      }
-      if (dataFim) {
-        params.append("data_fim", format(dataFim, "yyyy-MM-dd"))
-      }
+      params.append("data_inicio", primeiroDia)
+      params.append("data_fim", ultimoDia)
 
       const chavesFiltros = ["cliente", "projeto", "colaborador", "atividade", "tipoAtividade"] as const
       chavesFiltros.forEach((key) => {
@@ -106,8 +130,24 @@ export function App() {
       })
 
       const response = await apiFetch(`/api/relatorios/registro?${params.toString()}`)
-      const resultado = response.data || []
-      setDados(Array.isArray(resultado) ? resultado : [])
+      
+      if (response.error) {
+        throw new Error(response.message || "Erro ao buscar registros.")
+      }
+
+      const registros: RegistroApi[] = Array.isArray(response.data) ? response.data : []
+      
+      if (registros.length === 0) {
+        toast.info("Nenhum registro encontrado para esses filtros.")
+        return
+      }
+
+      await gerarRelatorio(
+        registros,
+        mesNum,
+        anoNum
+      )
+      toast.success("Relatório gerado! O download começou.")
     } catch (err) {
       console.error("Erro ao buscar registros na API:", err)
       setDados([])
@@ -115,7 +155,7 @@ export function App() {
       toast.success("Registros adquiridos! Download começando")
       setLoading(false)
     }
-  }, [dataInicio, dataFim, filtros])
+  }, [filtroAno, filtroMes, filtros])
 
   const handleInputChange = (field: keyof Filtros, subfield: "inicio" | "fim", value: string) => {
     setFiltros((prev) => ({
@@ -139,50 +179,42 @@ export function App() {
       <Card className="m-14 p-8 grid grid-cols-3">
         
         <div className="flex flex-col gap-1.5">
-          <Label>Data Início e Fim</Label>
-          <div className="flex items-center gap-2">
+          <Label>Mês e Ano</Label>
+          <div className="flex items-center gap-1.5">
             
-            <Popover modal={false}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="justify-start px-2.5 font-normal w-67"
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
-                  <span className="truncate">{dataInicio ? format(dataInicio, "dd/MM/yy") : "Início"}</span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={dataInicio}
-                  onSelect={setDataInicio}
-                  locale={ptBR}
-                />
-              </PopoverContent>
-            </Popover>
+            {/* Select de mês */}
+            <Select value={filtroMes} onValueChange={setFiltroMes}>
+              <SelectTrigger className="w-1/2">
+                <SelectValue placeholder="Mês" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {meses.map((m) => (
+                    <SelectItem key={m.value} value={m.value}>
+                      {m.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
 
             <Minus className="h-4 w-4 text-muted-foreground shrink-0" />
 
-            <Popover modal={false}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="justify-start px-2.5 font-normal w-67"
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
-                  <span className="truncate">{dataFim ? format(dataFim, "dd/MM/yy") : "Fim"}</span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={dataFim}
-                  onSelect={setDataFim}
-                  locale={ptBR}
-                />
-              </PopoverContent>
-            </Popover>
+            {/* Select de Ano */}
+            <Select value={filtroAno} onValueChange={setFiltroAno}>
+              <SelectTrigger className="w-1/2">
+                <SelectValue placeholder="Ano" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {anos.map((ano) => (
+                    <SelectItem key={ano} value={ano}>
+                      {ano}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
 
           </div>
         </div>
