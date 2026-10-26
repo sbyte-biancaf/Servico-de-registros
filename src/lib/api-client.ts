@@ -51,24 +51,17 @@ const maybeRedirectToLogin = () => {
   }
 }
 
-
-export const AMBIENTES = {
-  dev: {
-    url: "http://localhost:3001",
-    workspace: "sinoszep_00",
-    _TK: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiYWNjZXNzIiwidXN1YXJpb19pZCI6IjNjYmQ3MDZmLWE4YjItNDQ2NC1hMzhjLWU0NGMzMDNjYjBiMyIsIm5vbWVfdXN1YXJpbyI6InNieXRlLmJpYW5jYSIsImlhdCI6MTc5MjY4ODQ4Nn0.gV9UaLFNd56IwmqqmDO1mjyBVNbU57O9sSaP-T4_Wto"
-  },
-  hom: {
-    url: "https://api-chrono-hml.sinosbyte.com.br",
-    workspace: "sinosbyte_rs",
-    _TK: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiYWNjZXNzIiwidXN1YXJpb19pZCI6IjUxNWZlZDc4LWEyYzItNGE4OC05ZmJjLTY3YjM4MTU4NDIyOSIsIm5vbWVfdXN1YXJpbyI6InNieXRlLmJpYW5jYSIsImlhdCI6MTc5MDg2MjczOX0.98ZSLYTtyMDdXggheWdATKQrOuuqCmtma8cuzCqZ-zE"
-  },
-  prod: {
-    url: "https://api-chronotracker.sinosbyte.com.br",
-    workspace: "sinosbyte_rs",
-    _TK: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiYWNjZXNzIiwidXN1YXJpb19pZCI6IjUxNWZlZDc4LWEyYzItNGE4OC05ZmJjLTY3YjM4MTU4NDIyOSIsIm5vbWVfdXN1YXJpbyI6InNieXRlLmJpYW5jYSIsImlhdCI6MTc5MDg2MjczOX0.98ZSLYTtyMDdXggheWdATKQrOuuqCmtma8cuzCqZ-zE"
-  }
+type AmbienteConfig = {
+  url: string
+  workspace: string
+  _TK: string
 }
+
+export const AMBIENTES = new Map<string, AmbienteConfig>()
+
+AMBIENTES.set('dev', { url: "http://localhost:3001", workspace: "sinoszep_00", _TK: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiYWNjZXNzIiwidXN1YXJpb19pZCI6IjVlMDNiMDYwLTAyYTMtNGUyYi04ZTBhLThkZDhkMTQ2YzUyNCIsIm5vbWVfdXN1YXJpbyI6InNieXRlX2FkbWluIiwiaWF0IjoxNzkzMDM1ODkxfQ.YeXDJ91mQ9VMT-uCik0zIfLfXMHzpft_c9JD6dLIAdE"})
+AMBIENTES.set('hom', { url: "https://api-chrono-hml.sinosbyte.com.br", workspace: "sinosbyte_rs", _TK: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiYWNjZXNzIiwidXN1YXJpb19pZCI6IjRkYWZlYWMxLTdmZGUtNGRlNS1iYjQ0LWI4YTUyMTU1ZDE2ZiIsIm5vbWVfdXN1YXJpbyI6InNieXRlX2FkbWluIiwiaWF0IjoxNzkwODg1NjIzfQ.dKtSH_8-v1zmgF12k50zbeEzcmapKjV4mhokW3bRdyM"})
+AMBIENTES.set('prod', { url: "https://api-chronotracker.sinosbyte.com.br", workspace: "sinosbyte_rs", _TK: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiYWNjZXNzIiwidXN1YXJpb19pZCI6IjRkYWZlYWMxLTdmZGUtNGRlNS1iYjQ0LWI4YTUyMTU1ZDE2ZiIsIm5vbWVfdXN1YXJpbyI6InNieXRlX2FkbWluIiwiaWF0IjoxNzkzMDM2MjIzfQ.rwjnlNttzsO4GlF9RXV4rDmwo9szbTjzY_J2h7bNUNQ"})
 
 let ambienteAtual = (localStorage.getItem("chrono_env") as keyof typeof AMBIENTES) || "dev"
 
@@ -78,7 +71,7 @@ export function setAmbienteAtivo(env: keyof typeof AMBIENTES) {
 }
 
 const refreshSession = async (): Promise<boolean> => {
-  const envConfig = AMBIENTES[ambienteAtual]
+  const envConfig = AMBIENTES.get(ambienteAtual) || AMBIENTES.get("dev")!
   const targetUrl = `${envConfig.url}/auth/refresh-token`
   try {
     const response = await fetch(targetUrl, { method: "POST", credentials: "include" })
@@ -99,10 +92,9 @@ export const apiFetchRaw = async (
   options: RequestInit = {},
   allowRefresh = true
 ): Promise<Response> => {
-  
-  const envConfig = AMBIENTES[ambienteAtual]
+  const envConfig = AMBIENTES.get(ambienteAtual) || AMBIENTES.get("dev")!
   const url = `${envConfig.url}${endpoint}`
-  
+
   const isFormData = options.body instanceof FormData
 
   const headers = new Headers(options.headers)
@@ -113,7 +105,7 @@ export const apiFetchRaw = async (
     headers.set("X-Workspace-Id", envConfig.workspace)
   }
   headers.set("Authorization", "Bearer " + envConfig._TK)
-
+  
   const requestInit: RequestInit = { ...options, headers }
   const response = await fetch(url, requestInit)
 
