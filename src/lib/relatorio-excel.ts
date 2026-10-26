@@ -17,7 +17,7 @@ export type RegistroApi = {
 
 type DiaTrabalhado = { 
   horas: number; 
-  obs: string[];
+  obs: string;
   entrada: string
   saidaAlmoco: string
   retornoAlmoco: string
@@ -74,7 +74,7 @@ function agruparPorColaborador(
       saidaAlmoco: "",
       retornoAlmoco: "",
       saida: "",
-      obs: [],
+      obs: "",
     }
 
     item.horas += Number(r.qtd_horas_decimal) || 0
@@ -93,10 +93,7 @@ function agruparPorColaborador(
     }
 
     if (r.descricao || r.atividade) {
-      const descFormatada = r.descricao ? `${r.atividade} — ${r.descricao}` : r.atividade
-      if (!item.obs.includes(descFormatada)) {
-        item.obs.push(descFormatada)
-      }
+      item.obs = r.descricao ? `${r.atividade} — ${r.descricao}` : r.atividade
     }
 
     porDia.set(dia, item)
@@ -215,7 +212,7 @@ export async function RelatorioExcel(
           linha.getCell("D").value = retornoAlmoco ? saidaAlmoco : 0
           linha.getCell("E").value = retornoAlmoco ? retornoAlmoco : entrada
           linha.getCell("F").value = retornoAlmoco ? saida : saidaAlmoco
-          linha.getCell("H").value = obs.join(" | ")
+          linha.getCell("H").value = obs || ""
         }
       }
     }
