@@ -24,6 +24,7 @@ import {
   SelectGroup,
   SelectLabel,
 } from "@/components/ui/select"
+import { setAmbienteAtivo, AMBIENTES } from "./lib/api-client"
 
 // Início do uso de Excel
 import ExcelJS from "exceljs";
@@ -62,10 +63,17 @@ export function App() {
   const [filtroAno, setFiltroAno] = useState<string>(anoAtual)
   const [filtroMes, setFiltroMes] = useState<string>(mesAtual)
 
+  const [filtroAmbiente, setFiltroAmbiente] = useState(localStorage.getItem("chrono_env") || "dev")
+
   const [filtros, setFiltros] = useState<Filtros>(filtrosVazios())
   const [dados, setDados] = useState<unknown[]>([])
   const [loading, setLoading] = useState(false)
 
+  const handleTrocarAmbiente = (novoAmbiente: string) => {
+    setFiltroAmbiente(novoAmbiente)
+    setAmbienteAtivo(novoAmbiente as keyof typeof AMBIENTES)
+    toast.success(`Ambiente alterado para: ${novoAmbiente}`)
+  }
 
   const anos = [
     String(parseInt(anoAtual) + 2),
@@ -128,6 +136,9 @@ export function App() {
           params.append(`${key}Fim`, zzz.fim)
         }
       })
+
+      // params.append(`clienteInicio`, "Arezzo")
+      // params.append(`clienteFim`, "Arezzo")
 
       const response = await apiFetch(`/api/relatorios/registro?${params.toString()}`)
       
@@ -217,11 +228,31 @@ export function App() {
             </Select>
 
           </div>
+
+          
         </div>
+
+          {/* Select de ambiente */}
+          <div className="flex flex-col gap-1.5">
+            <Label>Ambiente</Label>
+            <div className="flex items-center gap-1.5">
+              <Select value={filtroAmbiente} onValueChange={handleTrocarAmbiente}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Ambiente" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="dev">dev</SelectItem>
+                    <SelectItem value="hom">hom</SelectItem>
+                    <SelectItem value="prod">prod</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
           {(
             [
-              { label: "Cliente", key: "cliente" },
               { label: "Projeto", key: "projeto" },
               { label: "Colaborador", key: "colaborador" },
               { label: "Atividade", key: "atividade" },

@@ -51,10 +51,37 @@ const maybeRedirectToLogin = () => {
   }
 }
 
+
+export const AMBIENTES = {
+  dev: {
+    url: "http://localhost:3001",
+    workspace: "sinoszep_00",
+    _TK: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiYWNjZXNzIiwidXN1YXJpb19pZCI6IjNjYmQ3MDZmLWE4YjItNDQ2NC1hMzhjLWU0NGMzMDNjYjBiMyIsIm5vbWVfdXN1YXJpbyI6InNieXRlLmJpYW5jYSIsImlhdCI6MTc5MjY4ODQ4Nn0.gV9UaLFNd56IwmqqmDO1mjyBVNbU57O9sSaP-T4_Wto"
+  },
+  hom: {
+    url: "https://api-chrono-hml.sinosbyte.com.br",
+    workspace: "sinosbyte_rs",
+    _TK: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiYWNjZXNzIiwidXN1YXJpb19pZCI6IjUxNWZlZDc4LWEyYzItNGE4OC05ZmJjLTY3YjM4MTU4NDIyOSIsIm5vbWVfdXN1YXJpbyI6InNieXRlLmJpYW5jYSIsImlhdCI6MTc5MDg2MjczOX0.98ZSLYTtyMDdXggheWdATKQrOuuqCmtma8cuzCqZ-zE"
+  },
+  prod: {
+    url: "https://api-chronotracker.sinosbyte.com.br",
+    workspace: "sinosbyte_rs",
+    _TK: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiYWNjZXNzIiwidXN1YXJpb19pZCI6IjUxNWZlZDc4LWEyYzItNGE4OC05ZmJjLTY3YjM4MTU4NDIyOSIsIm5vbWVfdXN1YXJpbyI6InNieXRlLmJpYW5jYSIsImlhdCI6MTc5MDg2MjczOX0.98ZSLYTtyMDdXggheWdATKQrOuuqCmtma8cuzCqZ-zE"
+  }
+}
+
+let ambienteAtual = (localStorage.getItem("chrono_env") as keyof typeof AMBIENTES) || "dev"
+
+export function setAmbienteAtivo(env: keyof typeof AMBIENTES) {
+  ambienteAtual = env
+  localStorage.setItem("chrono_env", env)
+}
+
 const refreshSession = async (): Promise<boolean> => {
-  const url = `${import.meta.env.VITE_LOCAL_API_URL}/auth/refresh-token`
+  const envConfig = AMBIENTES[ambienteAtual]
+  const targetUrl = `${envConfig.url}/auth/refresh-token`
   try {
-    const response = await fetch(url, { method: "POST", credentials: "include" })
+    const response = await fetch(targetUrl, { method: "POST", credentials: "include" })
     if (!response.ok) {
       maybeRedirectToLogin()
       return false
@@ -65,31 +92,27 @@ const refreshSession = async (): Promise<boolean> => {
     return false
   }
 }
-const WORKSPACE = "sinoszep_00"
-const _TK = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiYWNjZXNzIiwidXN1YXJpb19pZCI6IjNjYmQ3MDZmLWE4YjItNDQ2NC1hMzhjLWU0NGMzMDNjYjBiMyIsIm5vbWVfdXN1YXJpbyI6InNieXRlLmJpYW5jYSIsImlhdCI6MTc5MjY4ODQ4Nn0.gV9UaLFNd56IwmqqmDO1mjyBVNbU57O9sSaP-T4_Wto"
+
+
 export const apiFetchRaw = async (
   endpoint: string,
   options: RequestInit = {},
   allowRefresh = true
 ): Promise<Response> => {
-  const metaEnvs = {
-    prod: "https://api-chronotracker.sinosbyte.com.br",
-    hom: "https://api-chrono-hml.sinosbyte.com.br",
-    dev: "http://localhost:3001",
-  }
-  const env = import.meta.env.VITE_NODE_ENV as keyof typeof metaEnvs ?? "dev"
-
-  const url = `${metaEnvs[env]}${endpoint}`
+  
+  const envConfig = AMBIENTES[ambienteAtual]
+  const url = `${envConfig.url}${endpoint}`
+  
   const isFormData = options.body instanceof FormData
 
   const headers = new Headers(options.headers)
   if (!isFormData && options.body != null && !headers.has("content-type")) {
     headers.set("Content-Type", "application/json")
   }
-  if (WORKSPACE && !headers.has("X-Workspace-Id")) {
-    headers.set("X-Workspace-Id", WORKSPACE)
+  if (envConfig.workspace && !headers.has("X-Workspace-Id")) {
+    headers.set("X-Workspace-Id", envConfig.workspace)
   }
-  headers.set("Authorization", "Bearer " + _TK)
+  headers.set("Authorization", "Bearer " + envConfig._TK)
 
   const requestInit: RequestInit = { ...options, headers }
   const response = await fetch(url, requestInit)

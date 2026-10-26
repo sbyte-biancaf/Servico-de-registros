@@ -82,18 +82,26 @@ function agruparPorColaborador(
     const hInicio = format(r.horaInicio)
     const hFim = format(r.horaFim)
 
-    // Se a entrada ainda não foi preenchida, é o 1º lançamento (Turno Manhã)
-    if (!item.entrada) {
-      item.entrada = hInicio
-      item.saidaAlmoco = hFim
-    } else {
-      // Se a entrada já existe, é o 2º lançamento (Turno Tarde)
-      item.retornoAlmoco = hInicio
-      item.saida = hFim
-    }
+    const horaNumInicio = parseInt(hInicio.split(":")[0], 10)
 
-    if (r.descricao || r.atividade) {
-      item.obs = r.descricao ? `${r.atividade} — ${r.descricao}` : r.atividade
+    if (horaNumInicio < 12) {
+      // Turno da manhã
+      if (!item.entrada || hInicio < item.entrada) {
+        item.entrada = hInicio
+      }
+      // Atualiza a saída do almoço para o maior horário de término da manhã
+      if (!item.saidaAlmoco || hFim > item.saidaAlmoco) {
+        item.saidaAlmoco = hFim
+      }
+    } else {
+      // Turno da Tarde 
+      if (!item.retornoAlmoco || hInicio < item.retornoAlmoco) {
+        item.retornoAlmoco = hInicio // Pega a primeira hora da tarde
+      }
+      // Faz a última hora ser a hora de fim
+      if (!item.saida || hFim > item.saida) {
+        item.saida = hFim
+      }
     }
 
     porDia.set(dia, item)
@@ -140,13 +148,13 @@ export async function RelatorioExcel(
       const linhaAtual = wsConsolidado.getRow(rowNum);
 
       linhaAtual.getCell("A").value = nome;
-      linhaAtual.getCell("B").value = "desenvolvedor";
-      linhaAtual.getCell("C").value = "Senior";
+      linhaAtual.getCell("B").value = "PREENCHER";
+      linhaAtual.getCell("C").value = "PREENCHER";
       linhaAtual.getCell("D").value = empresa;
-      linhaAtual.getCell("E").value = "squad";
-      linhaAtual.getCell("F").value = "Fulano";
-      linhaAtual.getCell("G").value = "100%";
-      linhaAtual.getCell("H").value = 100;
+      linhaAtual.getCell("E").value = "PREENCHER";
+      linhaAtual.getCell("F").value = "PREENCHER";
+      linhaAtual.getCell("G").value = "PREENCHER";
+      linhaAtual.getCell("H").value = "PREENCHER";
 
       // Mantém a fórmula que puxa o total de horas da aba do colaborador correspondente (ex: 'Lucas Moraes'!H40)
       linhaAtual.getCell("I").value = { formula: `'${nome}'!G40` };
@@ -198,20 +206,20 @@ export async function RelatorioExcel(
       wsPonto.getCell("A1").value = { formula: `"REGISTRO DE PONTO — ${nome} — ${empresa} — " & Consolidado!$H$4 & "/" & Consolidado!$E$4` };
     
       wsPonto.getCell("B4").value = nome;
-      wsPonto.getCell("E4").value = "senior";
+      wsPonto.getCell("E4").value = "PREENCHER";
       wsPonto.getCell("H4").value = empresa;
-      wsPonto.getCell("B5").value = "aquad";
-      wsPonto.getCell("E5").value = 100;
+      wsPonto.getCell("B5").value = "PREENCHER";
+      wsPonto.getCell("E5").value = "PREENCHER";
 
       const mapaPonto = dadosPorColab.get(nome)
       if (mapaPonto) {
         for (const [dia, { entrada, saidaAlmoco, retornoAlmoco, saida, horas, obs }] of mapaPonto) {
           const linha = wsPonto.getRow(7 + dia)
 
-          linha.getCell("C").value = retornoAlmoco ? entrada : 0
-          linha.getCell("D").value = retornoAlmoco ? saidaAlmoco : 0
-          linha.getCell("E").value = retornoAlmoco ? retornoAlmoco : entrada
-          linha.getCell("F").value = retornoAlmoco ? saida : saidaAlmoco
+          linha.getCell("C").value = entrada || 0
+          linha.getCell("D").value = saidaAlmoco || 0
+          linha.getCell("E").value = retornoAlmoco || 0
+          linha.getCell("F").value = saida || 0
           linha.getCell("H").value = obs || ""
         }
       }
