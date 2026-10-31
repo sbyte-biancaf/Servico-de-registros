@@ -63,16 +63,14 @@ AMBIENTES.set('dev', { url: "http://localhost:3001", workspace: "sinoszep_00", _
 AMBIENTES.set('hom', { url: "https://api-chrono-hml.sinosbyte.com.br", workspace: "sinosbyte_rs", _TK: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiYWNjZXNzIiwidXN1YXJpb19pZCI6IjRkYWZlYWMxLTdmZGUtNGRlNS1iYjQ0LWI4YTUyMTU1ZDE2ZiIsIm5vbWVfdXN1YXJpbyI6InNieXRlX2FkbWluIiwiaWF0IjoxNzkwODg1NjIzfQ.dKtSH_8-v1zmgF12k50zbeEzcmapKjV4mhokW3bRdyM"})
 AMBIENTES.set('prod', { url: "https://api-chronotracker.sinosbyte.com.br", workspace: "sinosbyte_rs", _TK: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiYWNjZXNzIiwidXN1YXJpb19pZCI6IjRkYWZlYWMxLTdmZGUtNGRlNS1iYjQ0LWI4YTUyMTU1ZDE2ZiIsIm5vbWVfdXN1YXJpbyI6InNieXRlX2FkbWluIiwiaWF0IjoxNzkzMDM2MjIzfQ.rwjnlNttzsO4GlF9RXV4rDmwo9szbTjzY_J2h7bNUNQ"})
 
-let ambienteAtual = (localStorage.getItem("chrono_env") as keyof typeof AMBIENTES) || "dev"
-
-export function setAmbienteAtivo(env: keyof typeof AMBIENTES) {
-  ambienteAtual = env
-  localStorage.setItem("chrono_env", env)
+export function setAmbienteAtivo(env: string) {
+  localStorage.setItem("chrono_env", env || "dev")
 }
 
 const refreshSession = async (): Promise<boolean> => {
-  const envConfig = AMBIENTES.get(ambienteAtual) || AMBIENTES.get("dev")!
-  const targetUrl = `${envConfig.url}/auth/refresh-token`
+  const env = localStorage.getItem("chrono_env") || "dev"
+  const envConfig = AMBIENTES.get(env)
+  const targetUrl = `${envConfig?.url}/auth/refresh-token`
   try {
     const response = await fetch(targetUrl, { method: "POST", credentials: "include" })
     if (!response.ok) {
@@ -92,8 +90,12 @@ export const apiFetchRaw = async (
   options: RequestInit = {},
   allowRefresh = true
 ): Promise<Response> => {
-  const envConfig = AMBIENTES.get(ambienteAtual) || AMBIENTES.get("dev")!
-  const url = `${envConfig.url}${endpoint}`
+  const env = localStorage.getItem("chrono_env") || "dev"
+  console.log(env)
+  const envConfig = AMBIENTES.get(env)
+  console.log(envConfig)
+
+  const url = `${envConfig?.url}${endpoint}`
 
   const isFormData = options.body instanceof FormData
 
@@ -101,11 +103,10 @@ export const apiFetchRaw = async (
   if (!isFormData && options.body != null && !headers.has("content-type")) {
     headers.set("Content-Type", "application/json")
   }
-  if (envConfig.workspace && !headers.has("X-Workspace-Id")) {
+  if (envConfig?.workspace && !headers.has("X-Workspace-Id")) {
     headers.set("X-Workspace-Id", envConfig.workspace)
   }
-  headers.set("Authorization", "Bearer " + envConfig._TK)
-  
+  headers.set("Authorization", "Bearer " + envConfig?._TK)
   const requestInit: RequestInit = { ...options, headers }
   const response = await fetch(url, requestInit)
 
