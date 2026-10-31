@@ -128,7 +128,7 @@ export function App() {
       params.append("data_inicio", primeiroDia)
       params.append("data_fim", ultimoDia)
 
-      const chavesFiltros = ["cliente", "projeto", "colaborador", "atividade", "tipoAtividade"] as const
+      const chavesFiltros = ["projeto", "colaborador", "atividade", "tipoAtividade"] as const
       chavesFiltros.forEach((key) => {
         const zzz = formatarZZZ(filtros[key])
         if (zzz) {
@@ -137,8 +137,8 @@ export function App() {
         }
       })
 
-      // params.append(`clienteInicio`, "Arezzo")
-      // params.append(`clienteFim`, "Arezzo")
+      params.append(`clienteInicio`, "AREZZO")
+      params.append(`clienteFim`, "AREZZOZZZ")
 
       const response = await apiFetch(`/api/relatorios/registro?${params.toString()}`)
       
